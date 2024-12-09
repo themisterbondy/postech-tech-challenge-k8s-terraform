@@ -65,6 +65,7 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
   }
 }
 
+
 # Output para obter credenciais do cluster
 output "kube_config" {
   value     = azurerm_kubernetes_cluster.k8s_cluster.kube_config_raw
