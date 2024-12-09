@@ -29,24 +29,18 @@ variable "location" {
   default = "eastus"
 }
 
-# Criar o Resource Group
-resource "azurerm_resource_group" "rg" {
-  name     = var.resource_group_name
-  location = var.location
-}
-
 # Rede virtual
 resource "azurerm_virtual_network" "k8s_vnet" {
   name                = "postech-fiap-k8s-vnet"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = var.resource_group_name
 }
 
 # Subnet para o cluster
 resource "azurerm_subnet" "k8s_subnet" {
   name                 = "postech-fiap-k8s-subnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.k8s_vnet.name
   address_prefixes     = ["10.0.1.0/24"]
 }
@@ -55,7 +49,7 @@ resource "azurerm_subnet" "k8s_subnet" {
 resource "azurerm_kubernetes_cluster" "k8s_cluster" {
   name                = "postech-fiap-k8s-cluster"
   location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = var.resource_group_name
   dns_prefix          = "devk8scluster"
 
   # Configuração mínima de node pool
