@@ -33,7 +33,7 @@ variable "location" {
 resource "azurerm_virtual_network" "k8s_vnet" {
   name                = "postech-fiap-k8s-vnet"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.rg.location
+  location            = var.location
   resource_group_name = var.resource_group_name
 }
 
@@ -48,7 +48,7 @@ resource "azurerm_subnet" "k8s_subnet" {
 # Cluster Kubernetes AKS
 resource "azurerm_kubernetes_cluster" "k8s_cluster" {
   name                = "postech-fiap-k8s-cluster"
-  location            = azurerm_resource_group.rg.location
+  location            = var.location
   resource_group_name = var.resource_group_name
   dns_prefix          = "devk8scluster"
 
