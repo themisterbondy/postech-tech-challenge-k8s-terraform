@@ -33,6 +33,7 @@ variable "location" {
 variable "sql_connection_string" {
   description = "Connection string for PostgreSQL"
   type        = string
+  sensitive   = true
 }
 
 # Rede virtual
