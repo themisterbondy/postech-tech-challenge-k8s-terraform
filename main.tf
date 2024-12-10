@@ -42,6 +42,10 @@ resource "azurerm_virtual_network" "k8s_vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = var.location
   resource_group_name = var.resource_group_name
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Subnet para o cluster
@@ -50,6 +54,10 @@ resource "azurerm_subnet" "k8s_subnet" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.k8s_vnet.name
   address_prefixes     = ["10.0.1.0/24"]
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Cluster Kubernetes AKS
@@ -69,6 +77,10 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
   # Identidade gerenciada
   identity {
     type = "SystemAssigned"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
