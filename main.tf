@@ -29,6 +29,13 @@ variable "location" {
   default = "eastus"
 }
 
+# Variáveis
+variable "sql_connection_string" {
+  description = "Connection string for PostgreSQL"
+  type        = string
+  sensitive   = true
+}
+
 # Rede virtual
 resource "azurerm_virtual_network" "k8s_vnet" {
   name                = "postech-fiap-k8s-vnet"
@@ -65,9 +72,38 @@ resource "azurerm_kubernetes_cluster" "k8s_cluster" {
   }
 }
 
+provider "kubernetes" {
+  host                   = azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.host
+  client_certificate     = base64decode(azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.client_certificate)
+  client_key             = base64decode(azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.client_key)
+  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.cluster_ca_certificate)
+}
+
+# Namespace
+resource "kubernetes_namespace" "myfood_namespace" {
+  metadata {
+    name = "myfood-namespace"
+  }
+}
+
+# ConfigMap
+resource "kubernetes_config_map" "myfood_config" {
+  depends_on = [azurerm_kubernetes_cluster.k8s_cluster]
+
+  metadata {
+    name      = "myfood-config"
+    namespace = kubernetes_namespace.myfood_namespace.metadata[0].name
+  }
+
+  data = {
+    ConnectionStrings__SQLConnection = var.sql_connection_string
+  }
+}
 
 # Output para obter credenciais do cluster
 output "kube_config" {
   value     = azurerm_kubernetes_cluster.k8s_cluster.kube_config_raw
   sensitive = true
 }
+
+
