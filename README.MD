@@ -1,95 +1,138 @@
-# Documentação do Projeto
+# Documentação do Repositório Terraform para Infraestrutura Azure
 
-## Descrição Geral
-Este projeto utiliza **Terraform** para provisionar recursos na plataforma Microsoft Azure, incluindo a criação de uma rede virtual, sub-redes, um cluster Kubernetes (AKS) e o gerenciamento de namespaces e configurações. Paralelamente, um pipeline do GitHub Actions automatiza a implantação e o gerenciamento dos recursos definidos no Terraform.
+## Descrição
+Este repositório utiliza **Terraform** para provisionar recursos na plataforma Microsoft Azure, incluindo a criação de uma rede virtual (VNet), sub-redes, cluster Kubernetes (AKS), além do gerenciamento de namespaces e configurações.
+
+O repositório também inclui um pipeline automatizado de **GitHub Actions (CI/CD)** para validar e aplicar alterações na infraestrutura conforme definido no **Terraform**.
 
 ---
 
-## Estrutura do Projeto
+## Componentes
 
 ### Arquivos Principais
 
-1. **`main.yml`**: Arquivo de automação do GitHub Actions, utilizado para configurar um pipeline CI/CD para o Terraform.
-2. **`main.tf`**: Arquivo principal do Terraform contendo a configuração dos recursos Azure e Kubernetes.
+- **`main.yml`**: Configuração do pipeline CI/CD com GitHub Actions para validação e aplicação das mudanças de infraestrutura.
+- **`main.tf`**: Configuração principal do Terraform que define a infraestrutura na Azure.
 
 ---
 
-## Configuração do CI/CD com GitHub Actions (`main.yml`)
+## Estrutura do Repositório
 
-O pipeline de **GitHub Actions** realiza as seguintes etapas:
+### Pipeline CI/CD (`main.yml`)
+O arquivo `main.yml` contém um pipeline de CI/CD automatizado que realiza validações e aplicabilidade das alterações feitas.
 
-### Gatilhos
-- **Pull Request**: É executado quando pull requests são fechados para main
+#### **Fluxo do Pipeline**
+1. **Eventos Disparadores**:
+    - É disparado nos seguintes eventos:
+        - Pull Requests fechados.
+        - Alterações na branch `main`.
+    - Também pode ser executado manualmente com `workflow_dispatch`.
 
-`terraform apply`**: Aplica o plano gerado automaticamente. Este passo é executado **somente na branch `main`**.
+2. **Permissões Necessárias**:
+    - `id-token`: Usado para login no Azure.
+    - `contents`: Para verificar o repositório.
+
+3. **Etapas do Job `terraform`**:
+    - **Checkout do Código**: Obtém o código da branch.
+    - **Setup Terraform**: Prepara o ambiente com a versão adequada do Terraform.
+    - **Login no Azure**: Utiliza credenciais configuradas como Secrets no repositório.
+    - **Terraform Init**: Inicializa o diretório e os providers.
+    - **Terraform Validate**: Valida sintaticamente o código.
+    - **Terraform Plan**: Gera um plano de execução.
+    - **Terraform Apply**: Aplica as mudanças (somente quando aplicável à branch `main`).
+
+#### **Secrets Necessários**:
+Para autenticar e realizar deploy no Azure, os seguintes **secrets** são necessários no repositório:
+- `AZURE_CLIENT_ID`
+- `AZURE_TENANT_ID`
+- `AZURE_SUBSCRIPTION_ID`
+- `AZURE_POSTGRESQL_CONNECTION_STRING`
 
 ---
 
-## Configuração de Infraestrutura com Terraform (`main.tf`)
+### Infraestrutura Terraform (`main.tf`)
+O arquivo `main.tf` utiliza o Terraform para provisionar e configurar os seguintes recursos na Azure:
 
-### Provedores
+#### **Provedores**
 1. **AzureRM**:
-    - Configurado para acessar o recurso por `subscription_id`.
+    - Utilizado para gerenciar recursos na Azure com o Subscription ID.
 2. **Kubernetes**:
-    - Configurado para interagir com o cluster Kubernetes provisionado.
+    - Configurado para administração e provisionamento de recursos no cluster AKS.
 
-### Recursos Criados
+#### **Variáveis Configuráveis**
+- **`subscription_id`**: ID da assinatura Azure (obrigatório).
+- **`sql_connection_string`**: String de conexão com banco de dados PostgreSQL (configurada como sensível).
+- **Defaults**:
+    - **`resource_group_name`**: Nome do Resource Group. Default: `"rg-postech-fiap-k8s"`.
+    - **`location`**: Localização dos recursos. Default: `"eastus"`.
+    - **`vnet_name`**: Nome da Virtual Network. Default: `"postech-fiap-k8s-vnet"`.
+    - **`subnet_name`**: Nome da Sub-rede. Default: `"postech-fiap-k8s-subnet"`.
+    - **`cluster_name`**: Nome do cluster AKS. Default: `"postech-fiap-k8s-cluster"`.
 
-#### Variáveis
-**Definidas**:
-- **`subscription_id`**: ID da Assinatura Azure.
-- **`sql_connection_string`**: String de conexão com banco de dados PostgreSQL (sensível).
-
-**Default**:
-- **`resource_group_name`**: Nome do grupo de recursos (default: `rg-postech-fiap-k8s`).
-- **`location`**: Local dos recursos no Azure (default: `eastus`).
-
-#### Rede Virtual
-1. **Rede Virtual (VNet)**:
+#### **Recursos Criados**
+1. **Rede Virtual**
     - Nome: `postech-fiap-k8s-vnet`.
-    - Espaço de endereço: `10.0.0.0/16`.
-    - Local: `eastus`.
+    - Localização: `"eastus"`.
+    - Endereço: `10.0.0.0/16`.
 
-2. **Sub-rede**:
+2. **Sub-rede**
     - Nome: `postech-fiap-k8s-subnet`.
-    - Prefixo: `10.0.1.0/24`.
+    - Endereço: `10.0.1.0/24`.
 
-#### Cluster Kubernetes (AKS)
-- Nome: `postech-fiap-k8s-cluster`.
-- DNS: `devk8scluster`.
-- Node Pool:
-    - Tamanho dos nós: `Standard_B2s` (focado em economia para Dev).
-    - Contagem de nós: `1`.
+3. **Cluster Kubernetes (AKS)**
+    - Nome: `postech-fiap-k8s-cluster`.
+    - DNS: `devk8scluster`.
+    - Node Pool:
+        - Tamanho: `Standard_B2s` (econômico para desenvolvimento).
+        - Contagem de Nós: `1`.
 
-#### Recursos Kubernetes
-1. **Namespace**:
-    - Nome: `myfood-namespace`.
+4. **Recursos Kubernetes**
+    - Namespace:
+        - Nome: `myfood-namespace`.
+    - ConfigMap:
+        - Nome: `myfood-config`.
+        - Dados:
+            - **`ConnectionStrings__SQLConnection`**: Configurado com `sql_connection_string`.
 
-2. **ConfigMap**:
-    - Nome: `myfood-config`.
-    - Namespace: `myfood-namespace`.
-    - Dados:
-        - **`ConnectionStrings__SQLConnection`** com o valor de `sql_connection_string`.
-
----
-
-## Saídas do Terraform
-
-**`kube_config`**:
-- Gera e retorna as credenciais necessárias para acessar o cluster Kubernetes.
+#### **Saídas (Outputs)**
+- **`kube_config`**: Credenciais geradas para acesso ao cluster Kubernetes.
 
 ---
 
-## Requisitos
+## Como Usar
 
-### Ferramentas Necessárias
-- Terraform (v1.3.0 ou superior).
-- Azure CLI configurado.
-- GitHub Secrets configurados:
-    - **`AZURE_CLIENT_ID`**
-    - **`AZURE_TENANT_ID`**
-    - **`AZURE_SUBSCRIPTION_ID`**
-    - **`AZURE_POSTGRESQL_CONNECTION_STRING`**
+### Pré-Requisitos
+Certifique-se de que possui os seguintes requisitos configurados:
+1. **Ferramentas**:
+    - **Terraform**: Version `>= 1.3.0`.
+    - **Azure CLI**: Autenticado previamente.
+2. **Configuração do GitHub Actions**:
+    - Secrets configurados:
+        - `AZURE_CLIENT_ID`
+        - `AZURE_TENANT_ID`
+        - `AZURE_SUBSCRIPTION_ID`
+        - `AZURE_POSTGRESQL_CONNECTION_STRING`
 
 ---
 
+## Estrutura do Cluster Kubernetes
+
+#### Configuração
+1. **Rede Virtual**:
+    - Configurado com a sub-rede definida no Terraform.
+2. **Namespaces e Configurações**:
+    - Namespace `myfood-namespace`.
+    - ConfigMap associado com informações de conexão.
+
+---
+
+## Pipeline Automatizado
+
+### Funcionalidade
+- **Validação Automática**:
+    - Gatilhos em eventos pull request e pushes.
+    - Geração de plano para verificação.
+- **Aplicação Automatizada**:
+    - Aplicação ocorre apenas na branch `main` após validação.
+
+---
