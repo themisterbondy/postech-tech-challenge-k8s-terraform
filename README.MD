@@ -19,8 +19,7 @@ Este projeto utiliza **Terraform** para provisionar recursos na plataforma Micro
 O pipeline de **GitHub Actions** realiza as seguintes etapas:
 
 ### Gatilhos
-- **Push**: O pipeline é acionado em qualquer push para qualquer branch.
-- **Pull Request**: É executado quando pull requests são fechados.
+- **Pull Request**: É executado quando pull requests são fechados para main
 
 `terraform apply`**: Aplica o plano gerado automaticamente. Este passo é executado **somente na branch `main`**.
 
