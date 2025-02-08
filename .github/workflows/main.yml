@@ -1,10 +1,9 @@
 name: Terraform
 
 on:
-    push:
-        branches:
-            - '**'
     pull_request:
+        branches:
+            - main
         types: [closed]
     workflow_dispatch:
 
@@ -57,9 +56,7 @@ jobs:
                   path: tfplan
 
             - name: Terraform Apply
-              if: |
-                  (github.ref == 'refs/heads/main') &&
-                  (github.event_name != 'pull_request' || github.event.pull_request.merged == true)
+              if: github.event.pull_request.merged == true
               env:
                   TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
                   TF_VAR_sql_connection_string_orders: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING_ORDERS }}
