@@ -34,6 +34,9 @@ jobs:
             - name: Terraform Init
               run: terraform init
 
+            - name: Check Terraform Formatting
+              run: terraform fmt -check
+
             - name: Terraform Validate
               run: terraform validate
 
@@ -47,12 +50,20 @@ jobs:
                   TF_VAR_azure_storage_connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
               run: terraform plan -out=tfplan
 
+            - name: Upload Terraform Plan as Artifact
+              uses: actions/upload-artifact@v3
+              with:
+                  name: terraform-plan
+                  path: tfplan
+
             - name: Terraform Apply
-              if: github.ref == 'refs/heads/main'
+              if: |
+                  (github.ref == 'refs/heads/main') &&
+                  (github.event_name != 'pull_request' || github.event.pull_request.merged == true)
               env:
                   TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
                   TF_VAR_sql_connection_string_orders: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING_ORDERS }}
                   TF_VAR_sql_connection_string_carts_payments: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING_CARTS_PAYMENTS }}
                   TF_VAR_mongodb_connection_string: ${{ secrets.MONGODB_CONNECTION_STRING }}
                   TF_VAR_azure_storage_connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-              run: terraform plan -out=tfplan
+              run: terraform apply -auto-approve tfplan
