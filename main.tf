@@ -30,10 +30,28 @@ variable "location" {
 }
 
 # Variáveis
-variable "sql_connection_string" {
-  description = "Connection string for PostgreSQL"
+variable "mongodb_connection_string" {
+  description = "MongoDB connection string"
   type        = string
-  sensitive   = true
+  default     = ""
+}
+
+variable "sql_connection_string_orders" {
+  description = "SQL connection string for orders database"
+  type        = string
+  default     = ""
+}
+
+variable "azure_storage_connection_string" {
+  description = "Azure Storage connection string"
+  type        = string
+  default     = ""
+}
+
+variable "sql_connection_string_carts_payments" {
+  description = "SQL connection string for carts and payments database"
+  type        = string
+  default     = ""
 }
 
 # Rede virtual
@@ -98,17 +116,55 @@ resource "kubernetes_namespace" "myfood_namespace" {
   }
 }
 
-# ConfigMap
-resource "kubernetes_config_map" "myfood_config" {
+resource "kubernetes_config_map" "myfood_db_products_config" {
   depends_on = [azurerm_kubernetes_cluster.k8s_cluster]
 
   metadata {
-    name      = "myfood-config"
+    name      = "myfood-db-products-config"
     namespace = kubernetes_namespace.myfood_namespace.metadata[0].name
   }
 
   data = {
-    ConnectionStrings__SQLConnection = var.sql_connection_string
+    MongoDb__ConnectionString = var.mongodb_connection_string
+  }
+}
+
+resource "kubernetes_config_map" "myfood_db_carts_payments_config" {
+  depends_on = [azurerm_kubernetes_cluster.k8s_cluster]
+
+  metadata {
+    name      = "myfood-db-carts-payments-config"
+    namespace = kubernetes_namespace.myfood_namespace.metadata[0].name
+  }
+
+  data = {
+    ConnectionStrings__SQLConnection = var.sql_connection_string_carts_payments
+  }
+}
+
+resource "kubernetes_config_map" "myfood_db_orders_config" {
+  depends_on = [azurerm_kubernetes_cluster.k8s_cluster]
+
+  metadata {
+    name      = "myfood-db-orders-config"
+    namespace = kubernetes_namespace.myfood_namespace.metadata[0].name
+  }
+
+  data = {
+    ConnectionStrings__SQLConnection = var.sql_connection_string_orders
+  }
+}
+
+resource "kubernetes_config_map" "myfood_storage_account_config" {
+  depends_on = [azurerm_kubernetes_cluster.k8s_cluster]
+
+  metadata {
+    name      = "myfood-storage-account-config"
+    namespace = kubernetes_namespace.myfood_namespace.metadata[0].name
+  }
+
+  data = {
+    AzureStorageSettings__ConnectionString = var.azure_storage_connection_string
   }
 }
 

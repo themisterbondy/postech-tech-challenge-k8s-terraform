@@ -41,12 +41,18 @@ jobs:
               id: plan
               env:
                   TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-                  TF_VAR_sql_connection_string: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING }}
+                  TF_VAR_sql_connection_string_orders: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING_ORDERS }}
+                  TF_VAR_sql_connection_string_carts_payments: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING_CARTS_PAYMENTS }}
+                  TF_VAR_mongodb_connection_string: ${{ secrets.MONGODB_CONNECTION_STRING }}
+                  TF_VAR_azure_storage_connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
               run: terraform plan -out=tfplan
 
             - name: Terraform Apply
               if: github.ref == 'refs/heads/main'
               env:
                   TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-                  TF_VAR_sql_connection_string: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING }}
-              run: terraform apply -auto-approve tfplan
+                  TF_VAR_sql_connection_string_orders: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING_ORDERS }}
+                  TF_VAR_sql_connection_string_carts_payments: ${{ secrets.AZURE_POSTGRESQL_CONNECTION_STRING_CARTS_PAYMENTS }}
+                  TF_VAR_mongodb_connection_string: ${{ secrets.MONGODB_CONNECTION_STRING }}
+                  TF_VAR_azure_storage_connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+              run: terraform plan -out=tfplan
