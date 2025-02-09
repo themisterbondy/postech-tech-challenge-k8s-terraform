@@ -168,6 +168,19 @@ resource "kubernetes_config_map" "myfood_storage_account_config" {
   }
 }
 
+resource "kubernetes_config_map" "myfood_products_config" {
+  depends_on = [azurerm_kubernetes_cluster.k8s_cluster]
+
+  metadata {
+    name      = "myfood-products-config"
+    namespace = kubernetes_namespace.myfood_namespace.metadata[0].name
+  }
+
+  data = {
+    MyFoodProductsHttpClientSettings__BaseUrl = "http://myfood-products-webapi:80/api"
+  }
+}
+
 # Output para obter credenciais do cluster
 output "kube_config" {
   value     = azurerm_kubernetes_cluster.k8s_cluster.kube_config_raw
