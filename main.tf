@@ -191,17 +191,11 @@ provider "helm" {
   }
 }
 
-# Adicionando o repositório Helm
-resource "helm_repository" "ingress_nginx" {
-  name = "ingress-nginx"
-  url  = "https://kubernetes.github.io/ingress-nginx"
-}
-
 # Instalando o Helm Chart do Ingress NGINX
 resource "helm_release" "ingress_nginx" {
   name       = "ingress-nginx"
   chart      = "ingress-nginx"
-  repository = helm_repository.ingress_nginx.url
+  repository = "helm_repository.ingress_nginx.url"
   namespace  = "ingress-nginx"
 
   create_namespace = true
