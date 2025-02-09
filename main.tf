@@ -181,10 +181,40 @@ resource "kubernetes_config_map" "myfood_products_config" {
   }
 }
 
+# Adicionando o provedor Helm
+provider "helm" {
+  kubernetes {
+    host                   = azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.cluster_ca_certificate)
+  }
+}
+
+# Adicionando o repositório Helm
+resource "helm_repository" "ingress_nginx" {
+  name = "ingress-nginx"
+  url  = "https://kubernetes.github.io/ingress-nginx"
+}
+
+# Instalando o Helm Chart do Ingress NGINX
+resource "helm_release" "ingress_nginx" {
+  name       = "ingress-nginx"
+  chart      = "ingress-nginx"
+  repository = helm_repository.ingress_nginx.url
+  namespace  = "ingress-nginx"
+
+  create_namespace = true
+}
+
 # Output para obter credenciais do cluster
 output "kube_config" {
   value     = azurerm_kubernetes_cluster.k8s_cluster.kube_config_raw
   sensitive = true
 }
 
+# Output para obter o IP público do cluster Kubernetes
+output "kubernetes_cluster_public_ip" {
+  value = azurerm_kubernetes_cluster.k8s_cluster.kube_config.0.host
+}
 
