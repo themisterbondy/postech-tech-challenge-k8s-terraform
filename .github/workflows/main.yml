@@ -11,6 +11,10 @@ permissions:
     id-token: write
     contents: read
 
+env:
+    RESOURCE_GROUP: 'rg-postech-fiap-k8s'
+    CLUSTER_NAME: 'postech-fiap-k8s-cluster'
+    
 jobs:
     terraform:
         runs-on: ubuntu-latest
@@ -64,3 +68,21 @@ jobs:
                   TF_VAR_mongodb_connection_string: ${{ secrets.MONGODB_CONNECTION_STRING }}
                   TF_VAR_azure_storage_connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
               run: terraform apply -auto-approve tfplan
+
+            - name: 📥 Obter Configuração do Kubernetes
+              run: |
+                az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --overwrite-existing
+
+            - name: 📦 Instalar o Helm
+              uses: azure/setup-helm@v3
+
+            - name: 🚀 Deploy do Ingress NGINX no Kubernetes
+              run: |
+                helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+                helm repo update
+                helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+                  --namespace ingress-nginx \
+                  --create-namespace \
+                  --set controller.replicaCount=2 \
+                  --set controller.nodeSelector."kubernetes\.io/os"=linux \
+                  --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux
